@@ -17,7 +17,13 @@ Toute utilisation à des fins lucratives va à l’encontre des objectifs initia
 
  ## ▶️ Exécution
 Ce projet a été développé avec la version 3.11.0 de Python (installer cette version pour travailler sur le code).
+Vous pouvez soit installer l'excécutable, soit modifier le code source 😉
 
+## Installation de l'excécutable
+L'excécutable se situe dans le dossier dist.
+
+
+## Modification du code source
 Avant de commencer, initialiser votre environnement sur VSCode :
 - Création de votre environnement  : python -m venv FTM_env
 - Activation de votre environnement : FTM_env\Scripts\activate
