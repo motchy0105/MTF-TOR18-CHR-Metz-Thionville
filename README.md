@@ -36,8 +36,8 @@ Lancer le script avec :
 
 
 ⚡ Info rapide !
-Ce script fonctionne uniquement avec des PNG pour le moment.
-Les groupes de barres doivent être alignés comme sur ces images — des barres bien droites et propres ! (Un petit coup de retouche sur un éditeur d’images, et c’est réglé 😉)
+Ce script fonctionne uniquement avec les extensions png ou dcm.
+Les groupes de barres doivent être alignés comme sur ces images — des barres bien droites et propres ! (Fonctionnalité de rotation intégré, il suffit de tourner votre image via le curseur et d'appuyer sur la touche entrée 😉)
 
 ![Image initiale](Images/xray_2_Filter_3.png)
 ![Image modifié](Images/xray_2_Filter_3_mod.png)
