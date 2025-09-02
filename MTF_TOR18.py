@@ -8,6 +8,147 @@ from tkinter import filedialog
 import os
 import pandas as pd
 
+import pydicom
+from pydicom.pixel_data_handlers.util import apply_modality_lut, apply_voi_lut
+
+
+
+
+def rotate_image(image, angle):
+    """Rotation autour du centre, conserve le type et la taille"""
+    (h, w) = image.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, angle, 1.0)
+    rotated = cv2.warpAffine(image, M, (w, h),
+                             flags=cv2.INTER_LINEAR,
+                             borderMode=cv2.BORDER_CONSTANT,
+                             borderValue=0)
+def interactive_rotation(image):
+    rotated = image.copy()
+    angle = 0
+    ww = int(np.max(image) - np.min(image))
+    wl = int((np.max(image) + np.min(image)) / 2)
+
+    window_name = "Rotation + Window/Level"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+    cv2.createTrackbar('Angle', window_name, 0, 360, lambda x: None)
+    cv2.createTrackbar('WL', window_name, wl, int(np.max(image)), lambda x: None)
+    cv2.createTrackbar('WW', window_name, ww, int(np.max(image)), lambda x: None)
+
+    while True:
+        angle = cv2.getTrackbarPos('Angle', window_name)
+        wl = cv2.getTrackbarPos('WL', window_name)
+        ww = cv2.getTrackbarPos('WW', window_name)
+
+        M = cv2.getRotationMatrix2D((image.shape[1]//2, image.shape[0]//2), angle, 1)
+        rotated = cv2.warpAffine(image, M, (image.shape[1], image.shape[0]))
+
+        min_val = wl - ww//2
+        max_val = wl + ww//2
+        img_display = np.clip(rotated.astype(np.int32), min_val, max_val)
+        img_display = ((img_display - min_val) / max(1, (max_val - min_val)) * 255).astype(np.uint8)
+
+        cv2.imshow(window_name, img_display)
+        key = cv2.waitKey(50) & 0xFF
+        if key == 13:  # Enter
+            break
+        elif key == 27:  # Esc
+            rotated = image.copy()
+            break
+
+    cv2.destroyWindow(window_name)
+    return rotated, wl, ww
+
+def is_dicom(path: str) -> bool:
+    # Détection robuste : signature "DICM" OU lecture rapide sans pixels
+    try:
+        with open(path, "rb") as f:
+            preamble = f.read(132)
+            if len(preamble) >= 132 and preamble[128:132] == b"DICM":
+                return True
+        ds = pydicom.dcmread(path, stop_before_pixels=True, force=True)
+        return True if ds else False
+    except Exception:
+        return False
+
+
+def _normalize_to_uint16(arr: np.ndarray) -> np.ndarray:
+    arr = arr.astype(np.float32)
+    minv, maxv = np.nanmin(arr), np.nanmax(arr)
+    if maxv <= minv:
+        return np.zeros(arr.shape, dtype=np.uint16)
+    norm = (arr - minv) / (maxv - minv)
+    return (norm * 65535.0).clip(0, 65535).astype(np.uint16)
+
+def load_dicom_image(path: str, frame_index: int = 0,
+                     use_voi_lut: bool = True) -> np.ndarray:
+    """
+    Charge un DICOM en niveaux de gris, retourne une image uint16.
+    - Applique Modality LUT (RescaleSlope/Intercept) pour HU, etc.
+    - Applique VOI LUT/Window si disponible (optionnel).
+    - Gère MONOCHROME1 (inversion).
+    - Multi-frame: sélectionne frame_index.
+    """
+    ds = pydicom.dcmread(path, force=True)
+
+    # Décode pixels (pylibjpeg/gdcm conseillés si compressé)
+    px = ds.pixel_array  # (H,W) ou (N,H,W) ou (H,W,3)
+
+    # Multi-frame -> on prend une frame (modifiable selon ton besoin)
+    if px.ndim == 3 and getattr(ds, "NumberOfFrames", 1) > 1:
+        px = px[frame_index]
+
+    # Couleur -> gris
+    if px.ndim == 3 and px.shape[-1] == 3:
+        # BGR/ RGB ? DICOM couleur est généralement RGB
+        px = cv2.cvtColor(px.astype(np.uint8), cv2.COLOR_RGB2GRAY)
+
+    # Modality LUT (convertit en valeurs physiques : HU, etc.)
+    try:
+        px = apply_modality_lut(px, ds)
+    except Exception:
+        pass
+
+    # VOI LUT (windowing clinique -> rendu visuel cohérent)
+    if use_voi_lut:
+        try:
+            px = apply_voi_lut(px, ds)
+        except Exception:
+            pass
+
+    # Photometric Interpretation : MONOCHROME1 = inversé
+    photometric = getattr(ds, "PhotometricInterpretation", "MONOCHROME2")
+    if photometric.upper() == "MONOCHROME1":
+        # inversion relative au dynamique réelle
+        px = (np.max(px) - px)
+
+    # Cast en uint16 pour correspondre à ton pipeline (CLAHE ok en 8/16 bits)
+    if px.dtype != np.uint16:
+        px = _normalize_to_uint16(px)
+
+    return px
+def load_png_image(path):
+    image = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    if image is None:
+        raise ValueError(f"Échec de lecture: {path}")
+    if image.ndim == 3:
+        if image.shape[2] == 4:
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2GRAY)
+        elif image.shape[2] == 3:
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Monte en 16 bits si nécessaire
+    if image.dtype == np.uint8:
+        image = (image.astype(np.uint16) * 257)
+    elif image.dtype != np.uint16:
+        image = _normalize_to_uint16(image)
+    return image
+
+def load_image_any(path: str) -> np.ndarray:
+    if is_dicom(path):
+        return load_dicom_image(path, frame_index=0, use_voi_lut=True)
+    else:
+        return load_png_image(path)
 def on_key(event):
     global edit_mode, bars, numbers, last_modified_text, history_stack, initial_state
 
@@ -499,6 +640,19 @@ def sort_bars_grid_columnwise_mirrored(bars, y_thresh=30, debug=False):
                 sorted_bars.append(lines[row][col][0])
     return sorted_bars
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 # 9. Chargement #MAIINNNNNN###################
 root = tk.Tk()
 root.withdraw()  # cache la fenêtre principale tkinter
@@ -506,15 +660,33 @@ root.withdraw()  # cache la fenêtre principale tkinter
 # Ouvre une boîte de dialogue pour sélectionner une image (png, jpg...)
 image_path = filedialog.askopenfilename(
     title="Sélectionnez une image",
-    filetypes=[("Fichiers PNG", "*.png"), ("Fichiers JPG", "*.jpg;*.jpeg"), ("Tous fichiers", "*.*")]
+    filetypes=[
+        ("Fichiers DICOM", "*.dcm;*.dicom"),
+        ("Fichiers PNG", "*.png"),
+        ("Fichiers JPG", "*.jpg;*.jpeg"),
+        ("Tous fichiers", "*.*")
+    ]
 )
 if not image_path:
     print("Aucun fichier sélectionné. Fin du programme.")
     exit()
 
 print(f"Image sélectionnée : {image_path}")
-image = load_png_image(image_path)
-image_eq = preprocess(image)
+image = load_image_any(image_path)
+# Redimensionner juste pour l'affichage
+
+image_rot, wl_selected, ww_selected = interactive_rotation(image)
+
+# Appliquer WL/WW sur une copie pour traitement automatique
+min_val = wl_selected - ww_selected//2
+max_val = wl_selected + ww_selected//2
+image_wl = np.clip(image_rot.astype(np.int32), min_val, max_val)
+
+# Normaliser sur 0-255 pour traitement CLAHE
+image_wl_norm = ((image_wl - min_val) / max(1, (max_val - min_val)) * 255).astype(np.uint8)
+
+# Prétraitement
+image_eq = preprocess(image_wl_norm)
 
 # Sélection manuelle de plusieurs régions de recherche des barres
 print("Sélectionnez les RÉGIONS DE RECHERCHE DES BARRES (plusieurs possibles, appuyez sur Échap quand terminé)")
