@@ -1,5 +1,7 @@
 # MTF_TOR18 : Contrôle Qualité en Radiothérapie Conforme à l’ANSM 2023
 
+(Version Non Finalisée = bugs à certains endroits, en cours de développement en parallèle d'autres projets)
+
 Ce projet a été développé dans le cadre de la mise en conformité avec la décision de l’ANSM du 28 février 2023, fixant les modalités du contrôle de qualité des installations de radiothérapie externe et de radiochirurgie.
 
 Le script MTF_TOR18.py permet notamment l’analyse de la Fonction de Transfert de Modulation (FTM), conformément aux exigences réglementaires en vigueur.
