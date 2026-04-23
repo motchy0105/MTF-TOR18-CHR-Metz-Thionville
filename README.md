@@ -1,90 +1,129 @@
-# MTF_TOR18 : Contrôle Qualité en Radiothérapie Conforme à l’ANSM 2023
+# MTF_TOR18 — Analyse FTM (Contrôle Qualité Radiothérapie)
 
-(Version Non Finalisée = bugs à certains endroits, en cours de développement en parallèle d'autres projets)
+Application permettant l’analyse de la **Fonction de Transfert de Modulation (FTM)** à partir d’images du fantôme **TOR18**, dans le cadre du contrôle qualité en radiothérapie conformément à la décision **ANSM du 28 février 2023**.
 
-Ce projet a été développé dans le cadre de la mise en conformité avec la décision de l’ANSM du 28 février 2023, fixant les modalités du contrôle de qualité des installations de radiothérapie externe et de radiochirurgie.
+Màj : La 1ere version de l'application est disponible, si vous rencontrez des bugs, n'hésitez pas à me contacter.
 
-Le script MTF_TOR18.py permet notamment l’analyse de la Fonction de Transfert de Modulation (FTM), conformément aux exigences réglementaires en vigueur.
+---
 
-Il s'agit d’un projet à visée non commerciale, destiné à des usages scientifiques, pédagogiques ou institutionnels.
-Toute utilisation à des fins lucratives va à l’encontre des objectifs initiaux et de l’esprit de recherche du projet.
+## Téléchargement
 
+Téléchargez l’exécutable :
 
-## 📂 Contenu
+➡️ **Lancer directement `MTF_TOR18.exe` (aucune installation requise)**
 
- - 'MTF_TOR18.py' : Script de détection des groupes de barres sur le fantôme TOR18
- - 'README.md' : Explication du projet
- - '.gitignore' : fichiers ignorés par Git
+---
 
+## Fonctionnalités
 
- ## ▶️ Exécution
-Ce projet a été développé avec la version 3.11.0 de Python (installer cette version pour travailler sur le code).
-Vous pouvez soit installer l'excécutable, soit modifier le code source 😉
+L’application permet :
 
-## Installation de l'excécutable
-L'excécutable se situe dans le dossier dist.
+- Chargement d’images **DICOM** ou standards (PNG, JPG, etc.)
+- Rotation et réglage du contraste (WL / WW)
+- Sélection des **ROIs de recherche**
+- Sélection des zones **fond** et **matériau**
+- Détection automatique des groupes de barres
+- Correction manuelle :
+  - modification des numéros
+  - re-segmentation
+  - suppression / séparation
+- Calcul de la **FTM**
+- Ajustement exponentiel
+- Extraction :
+  - **FTM 50 %**
+  - **FTM 10 %**
+- Export automatique :
+  - image annotée
+  - courbe FTM
+  - fichier Excel
+  - rapport PDF
 
+---
 
-## Modification du code source
-Avant de commencer, initialiser votre environnement sur VSCode :
-- Création de votre environnement  : python -m venv FTM_env
-- Activation de votre environnement : FTM_env\Scripts\activate
+## Formats supportés
 
-Installer les dépendances : 
-- pip install -r requirements.txt
+- DICOM (`.dcm`, `.dicom`)
+- Images (`.png`, `.jpg`, `.jpeg`, `.bmp`, `.tif`, `.tiff`, `.webp`)
 
-Lancer le script avec :
-- python script.py
+---
 
+## Utilisation
 
-⚡ Info rapide !
-Ce script fonctionne uniquement avec les extensions png ou dcm.
-Les groupes de barres doivent être alignés comme sur ces images — des barres bien droites et propres ! (Fonctionnalité de rotation intégré, il suffit de tourner votre image via le curseur et d'appuyer sur la touche entrée 😉)
+### 1. Charger une image
+Lancer l’application puis sélectionner l’image à analyser.
 
-![Image initiale](Images/xray_2_Filter_3.png)
-![Image modifié](Images/xray_2_Filter_3_mod.png)
+---
 
-Comment ça marche ?
+### 2. Ajuster l’image
+- Rotation
+- Window Level (WL)
+- Window Width (WW)
 
-1️⃣ Place correctement ton image modifiée, puis lance le script et sélectionne cette image.
-2️⃣ Sélectionne les 3 lignes de groupes de barres : pour chaque ligne, appuie sur Entrée quand ta ROI est bien positionnée (voir exemples ci-dessous).
+👉 Important : les barres doivent être **droites et bien visibles**
 
-![Image ROI 1](Images/X_ray_ROI_Ligne_1.png)
-![Image ROI 2](Images/X_ray_ROI_Ligne_2.png)
-![Image ROI 3](Images/X_ray_ROI_Ligne_3.png)
+---
 
-3️⃣ Une fois les 3 régions validées, appuie sur Échap.
-4️⃣ Une fenêtre s’ouvre pour choisir le seuil de détection (à la louche). Valide avec Entrée.
+### 3. Sélectionner les ROIs
+Sélectionner les zones contenant les groupes de barres.
 
-![Image seuil](Images/Seuil.png)
+![ROI 1](Images/X_ray_ROI_Ligne_1.png)
+![ROI 2](Images/X_ray_ROI_Ligne_2.png)
+![ROI 3](Images/X_ray_ROI_Ligne_3.png)
 
-5️⃣ Sélectionne ensuite le fond puis le matériau (images à l’appui).
+---
 
-![Image fond](Images/fond.png)
-![Image materiau](Images/materiau.png)
+### 4. Sélectionner les références
+- Zone **fond**
+- Zone **matériau**
 
-Et après ?
-- Pour changer le seuil, appuie sur ‘r’ et sélectionne la ROI à reseuiller.
-- Pour modifier un numéro, appuie sur ‘m’, clique sur la ROI, et saisis le nouveau numéro dans le prompt.
-- Tu peux aussi supprimer une ROI, revenir en arrière avec ‘z’, ou revenir à l’état initial avec ‘u’.
-- La touche ‘a’ réinitialise tous les numéros.
-- Quand tu as fini, ferme la fenêtre en cliquant sur la croix.
+![Fond](Images/fond.png)
+![Matériau](Images/materiau.png)
 
-![Image modification](Images/modification.png)
+---
 
+### 5. Ajuster si nécessaire
+L’application permet de corriger automatiquement ou manuellement :
 
-Résultat final
-Le script génère une image finale binarisée avec la méthode d’Otsu, qui capture l’info utile dans chaque ROI.
-Une figure s’affiche avec :
-- La FTM mesurée dans chaque groupe,
-- Un ajustement exponentiel pour analyser les données.
+- modifier les numéros
+- re-segmenter une zone
+- supprimer une ROI
+- revenir en arrière
+- renuméroter automatiquement
 
-Deux fichiers seront sauvegardés :
-- La figure affichée,
-- Un fichier Excel avec toutes les valeurs calculées.
+---
 
-Have Fun et bon boulot ! 🎉
-Pour toute question, n’hésite pas à me contacter sur LinkedIn ou par mail : motchy.saleh@chr-metz-thionville.fr
-Tu peux aussi joindre M. DJIBOSIDIKOU pour un coup de pouce.
+### 6. Résultats
 
-Motchy SALEH
+L’application génère automatiquement :
+
+- une image annotée
+- une courbe FTM
+- un fichier Excel
+- un rapport PDF
+
+---
+
+## Recommandations
+
+- Image bien orientée
+- Bon contraste
+- ROIs correctement positionnées
+
+---
+
+## Contact
+
+**Motchy SALEH**  
+📧 motchy.saleh@chr-metz-thionville.fr  
+🔗 https://www.linkedin.com/in/motchy-saleh/
+
+---
+
+## Usage
+
+Projet à visée **non commerciale**  
+Utilisation recommandée dans un cadre **scientifique, hospitalier ou pédagogique**
+
+---
+
+Bon usage 👌
