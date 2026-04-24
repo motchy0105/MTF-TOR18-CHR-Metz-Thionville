@@ -52,6 +52,7 @@ L’application permet :
 ### 1. Charger une image
 Lancer l’application puis sélectionner l’image à analyser.
 
+![Application](Images/Page_initial.png)
 ---
 
 ### 2. Ajuster l’image
@@ -60,15 +61,14 @@ Lancer l’application puis sélectionner l’image à analyser.
 - Window Width (WW)
 
 👉 Important : les barres doivent être **droites et bien visibles**
-
+![Rotation](Images/Etape_rotation.png)
 ---
 
 ### 3. Sélectionner les ROIs
 Sélectionner les zones contenant les groupes de barres.
 
-![ROI 1](Images/X_ray_ROI_Ligne_1.png)
-![ROI 2](Images/X_ray_ROI_Ligne_2.png)
-![ROI 3](Images/X_ray_ROI_Ligne_3.png)
+![ROI](Images/Etape_reperage.png)
+
 
 ---
 
@@ -76,8 +76,8 @@ Sélectionner les zones contenant les groupes de barres.
 - Zone **fond**
 - Zone **matériau**
 
-![Fond](Images/fond.png)
-![Matériau](Images/materiau.png)
+![Fond](Images/etape_fond.png)
+![Matériau](Images/etape_materiau.png)
 
 ---
 
@@ -89,7 +89,7 @@ L’application permet de corriger automatiquement ou manuellement :
 - supprimer une ROI
 - revenir en arrière
 - renuméroter automatiquement
-
+![Edition](Images/Etape_edition.png)
 ---
 
 ### 6. Résultats
@@ -100,6 +100,8 @@ L’application génère automatiquement :
 - une courbe FTM
 - un fichier Excel
 - un rapport PDF
+
+![Rapport/calcul](Images/Etape_calcul_rapport.png)
 
 ---
 
